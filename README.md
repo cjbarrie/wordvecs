@@ -1,4 +1,4 @@
-# wordvectutorial
+# wordvecs
 
 ## Day 1
 
