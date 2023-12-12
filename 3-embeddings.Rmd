@@ -1,0 +1,214 @@
+---
+bibliography: references.bib
+---
+
+# Word vectors and embeddings 2
+
+## Introduction
+
+In this tutorial we will be using word embeddings in a different way. Instead of learning just how to estimate them, we will learn how we can perform analyses on massive pre-trained embedding layers.
+
+You would have a hard time estimating these embedding layers on your own machines. As such, these are really brilliant resources. And they are available for public use.
+
+We will be using the same embeddings used in @charlesworth2022.
+
+I have made the download links to these embeddings available on the README to the main Github repo. They are also available [here](https://www.dropbox.com/scl/fi/j7pcfg5dgkosnyjh82eiu/wordvecsdata_engall.RData?rlkey=2gs9mmcn1qtpmkuurefxch48u&dl=0). 
+
+It's a large file. But it's all set up for use in R. 
+
+### Reading in the embedding layer. 
+
+We can read in the embedding layer as so:
+
+```{r, eval = F}
+
+library(dplyr)
+library(sweater)
+library(tidyr)
+library(widyr)
+library(ggplot2)
+library(tibble)
+
+load("data/output/wordvecsdata_engall.Rdata")
+
+```
+
+```{r, echo = F, eval = T, message=F, warning = F}
+
+library(dplyr)
+library(sweater)
+library(tidyr)
+library(widyr)
+library(ggplot2)
+library(tibble)
+
+load("/Users/cbarrie6/Dropbox/edbrgh_projects/wrdembed_orientalism/data/output/wordvecsdata_engall.RData")
+
+```
+
+```{r, eval = T,  message=F, warning = F}
+
+# Example usage
+S1 <- c("engineer")
+A1 <- c("woman")
+decade_names <- seq(1800, 1990, by = 10)
+
+P_all <- data.frame(matrix(ncol=0, nrow=length(S1)))
+
+for (i in seq_along(wordvecs.dat)) {
+
+  embedding <- as.matrix(wordvecs.dat[[i]])
+  x <- mac(embedding, S1, A1)
+
+  P <- as.data.frame(x$P)
+  colnames(P) <- decade_names[[i]]
+  P_all <- cbind(P_all, P)
+}
+
+P_all <- P_all %>%
+  rownames_to_column("word")
+
+P_all_long <- P_all %>% gather(year, value, -c("word"))
+P_all_long$year <- as.numeric(P_all_long$year)
+
+ggplot(P_all_long) +
+  geom_line(aes(year, value, group = word, linetype = word), alpha = .25) +
+  ylim(c(-0.1, 0.2))
+
+```
+
+```{r, eval = T,  message=F, warning = F}
+
+# Example usage
+S1 <- c("scientist", "engineer")
+A1 <- c("woman")
+decade_names <- seq(1800, 1990, by = 10)
+
+P_all <- data.frame(matrix(ncol=0, nrow=length(S1)))
+
+for (i in seq_along(wordvecs.dat)) {
+
+  embedding <- as.matrix(wordvecs.dat[[i]])
+  x <- mac(embedding, S1, A1)
+
+  P <- as.data.frame(x$P)
+  colnames(P) <- decade_names[[i]]
+  P_all <- cbind(P_all, P)
+}
+
+P_all <- P_all %>%
+  rownames_to_column("word")
+
+P_all_long <- P_all %>% gather(year, value, -c("word"))
+P_all_long$year <- as.numeric(P_all_long$year)
+
+ggplot(P_all_long) +
+  geom_line(aes(year, value, group = word, linetype = word), alpha = .25) +
+  ylim(c(-0.1, 0.2))
+
+```
+
+```{r, eval = T,  message=F, warning = F}
+
+# Example usage
+S1 <- c("soft", "modest", "fair")
+A1 <- c("woman")
+decade_names <- seq(1800, 1990, by = 10)
+
+P_all <- data.frame(matrix(ncol=0, nrow=length(S1)))
+
+for (i in seq_along(wordvecs.dat)) {
+
+  embedding <- as.matrix(wordvecs.dat[[i]])
+  x <- mac(embedding, S1, A1)
+
+  P <- as.data.frame(x$P)
+  colnames(P) <- decade_names[[i]]
+  P_all <- cbind(P_all, P)
+}
+
+P_all <- P_all %>%
+  rownames_to_column("word")
+
+P_all_long <- P_all %>% gather(year, value, -c("word"))
+P_all_long$year <- as.numeric(P_all_long$year)
+
+ggplot(P_all_long) +
+  geom_line(aes(year, value, group = word, linetype = word), alpha = .25) + ylim(c(-0.1, 0.2))
+
+```
+
+```{r, eval = T,  message=F, warning=F}
+# Example usage
+S1 <- c("lonely", "cruel", "sensual")
+
+A1 <- c("black")
+decade_names <- seq(1800, 1990, by = 10)
+
+P_all <- data.frame(matrix(ncol=0, nrow=length(S1)))
+
+for (i in seq_along(wordvecs.dat)) {
+
+  embedding <- as.matrix(wordvecs.dat[[i]])
+  x <- mac(embedding, S1, A1)
+
+  P <- as.data.frame(x$P)
+  colnames(P) <- decade_names[[i]]
+  P_all <- cbind(P_all, P)
+}
+
+P_all <- P_all %>%
+  rownames_to_column("word")
+
+P_all_long_black <- P_all %>% gather(year, value, -c("word"))
+P_all_long_black$year <- as.numeric(P_all_long_black$year)
+P_all_long_black$category <- "black"
+
+ggplot(P_all_long_black) +
+  geom_line(aes(year, value, group = word, linetype = word), alpha = .25) + ylim(c(-0.1, 0.2))
+
+# Example usage
+S1 <- c("lonely", "cruel", "sensual")
+A1 <- c("white")
+decade_names <- seq(1800, 1990, by = 10)
+
+P_all <- data.frame(matrix(ncol=0, nrow=length(S1)))
+
+for (i in seq_along(wordvecs.dat)) {
+
+  embedding <- as.matrix(wordvecs.dat[[i]])
+  x <- mac(embedding, S1, A1)
+
+  P <- as.data.frame(x$P)
+  colnames(P) <- decade_names[[i]]
+  P_all <- cbind(P_all, P)
+}
+
+P_all <- P_all %>%
+  rownames_to_column("word")
+
+P_all_long_white <- P_all %>% gather(year, value, -c("word"))
+P_all_long_white$year <- as.numeric(P_all_long_white$year)
+P_all_long_white$category <- "white"
+
+ggplot(P_all_long_white) +
+  geom_line(aes(year, value, group = word, linetype = word), alpha = .25) + ylim(c(-0.1, 0.2))
+
+
+P_all_long_wb <- rbind(P_all_long_black,P_all_long_white)
+
+# this section is essentially doing what `mac_es()` would do if called in loop
+P_all_mean_wb <- P_all_long_wb %>%
+  group_by(year, category) %>%
+  summarise(mean_sim = mean(value, na.rm = T), #note: averaging across non-NA values
+            word = "average")
+
+P_all_mean_wb[P_all_mean_wb=="NaN"] <- NA
+
+ggplot(P_all_long_wb) +
+  geom_line(aes(year, value, group = word, linetype = word), alpha = .25) +
+  geom_line(data = P_all_mean_wb, aes(year, mean_sim, group = word), color = "black", size = 2, linewidth =.5) +
+  geom_smooth(data = P_all_mean_wb, aes(year, mean_sim, group = word), alpha = .1, col = "#fc0000", linewidth =3) +
+  facet_wrap(~category)
+
+```
