@@ -152,4 +152,5 @@ cos_simsdf %>%
 In this final example, we see how we can make over-time comparisons by averaging over a year variable. 
 
 Here, we are averaging the associations between the words immigration and immigrants and the word "danger". We see there is a decline from 2011 onwards. Of course, this would need further validation as we are using just a small subsample of data. 
+
 ## References
