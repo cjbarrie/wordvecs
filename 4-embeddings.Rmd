@@ -1,0 +1,155 @@
+---
+bibliography: references.bib, CTA.bib
+---
+
+# Word vectors and embeddings 3
+
+## Introduction
+
+In this tutorial we'll be looking at one final approach to using word embeddings. These make use of a new approach---ALC embeddings.
+
+These are particularly useful if you want to make comparisons across groups or across time.
+
+Here, we will be making reference to some of the sample code provided for work by @rodriguez2023 detailed in the package documentation [here](https://github.com/prodriguezsosa/conText/blob/master/vignettes/quickstart.md).
+
+The code we'll be using is bundled in a package called `conText`, which you can install as below.
+
+```{r, eval = F,}
+install.packages("conText")
+library(context)
+```
+
+```{r, eval = T, echo = F, message=F, warning = F}
+library(conText)
+library(dplyr)
+library(quanteda)
+library(ggplot2)
+```
+
+Similar to when we estimated our own word embeddings, we are using here a corpus object of the same type that we had when using the `quanteda` package.
+
+We will also be using a set of pre-trained embeddings, just like we used when we tried out the Histwords data.
+
+The final addition is our transformation matrix, which the authors provide bundled into the `conText` package.
+
+To get data into our environment from a package, we can use the `data()` function:
+
+```{r, message=F, warning = F}
+data("cr_sample_corpus")
+glimpse(cr_sample_corpus)
+```
+
+We see that we have here a series of documents, that are named with ideas and document names. And we see also that the documents have associated metadata detailing the name of the party of the speaker as well as other variables like their gender.
+
+We first carry out some preprocessing steps on our data.
+
+```{r, message=F, warning = F}
+# tokenize corpus removing unnecessary (i.e. semantically uninformative) elements
+toks <- tokens(cr_sample_corpus, remove_punct=T, remove_symbols=T, remove_numbers=T, remove_separators=T)
+
+# clean out stopwords and words with 2 or fewer characters
+toks_nostop <- tokens_select(toks, pattern = stopwords("en"), selection = "remove", min_nchar=3)
+
+# only use features that appear at least 5 times in the corpus
+feats <- dfm(toks_nostop, tolower=T, verbose = FALSE) %>% dfm_trim(min_termfreq = 5) %>% featnames()
+
+# leave the pads so that non-adjacent words will not become adjacent
+toks_nostop_feats <- tokens_select(toks_nostop, feats, padding = TRUE)
+```
+
+We then go on to build our foundation stone for the ALC approach: we grab our words that appear around our target word.
+
+And we can do this very easily with the `tokens_context()` function, which identifies the words that appear around our target words and stores them (alongside all the other docvar information like party, gender etc.).
+
+```{r, warning=F, message=F}
+# build a tokenized corpus of contexts surrounding the target term "immigration"
+immig_toks <- tokens_context(x = toks_nostop_feats, pattern = "immigration", window = 6L)
+```
+
+We see here that we have 924 times the word immigration is found. And these are then split into 924 separate "texts" which simply contain the words surrounding the word immigration.
+
+And note that we still have the corresponding party and gender etc. information stored inside this object, which we can see if we call `docvars()`:
+
+```{r, warning=F, message=F}
+head(docvars(immig_toks))
+```
+
+Once we have this informaiton, we are reading to build our document feature matrix.
+
+You can understand this as a big matrix where the size of the vocabulary is the size of the unique words that appear around the term immigration.
+
+This is how we do that:
+
+```{r, warning=F, message=F}
+immig_dfm <- dfm(immig_toks)
+head(immig_dfm)
+```
+
+Once we have this, we can build our document embedding matrix.
+
+To do this, we need our embedding layer, which we will have estimated using the same technique we used before, and our transformation matrix, which we estimate using the `conText` package detailed [here](https://github.com/prodriguezsosa/conText/blob/master/vignettes/quickstart.md#local-glove-and-transformation-matrix).
+
+The procedure is relatively simple: a series of multiplications.
+
+1.  We take our feature counts for each of the words in each of our "texts" above;
+2.  we look them up in our pre-trained embedding layer;
+3.  we multiply these vectors by the number of times they appear; and 4.we multiply by the transformation matrix.
+
+And we can do all of this with one function, provided in the `conText` package:
+
+```{r, warning=F, message=F}
+immig_dem <- dem(x = immig_dfm, pre_trained = cr_glove_subset, transform = TRUE, transform_matrix = cr_transform, verbose = TRUE)
+
+```
+
+These are our document-level embeddings. 
+
+But remember these still contain information on the party of the speaker and their gender etc. 
+
+So we can easily average over these to get averaged group embeddings. 
+
+Here's how we do that by party:
+
+```{r, message=F, warning=F}
+# to get group-specific embeddings, average within party
+immig_wv_party <- dem_group(immig_dem, groups = immig_dem@docvars$party)
+dim(immig_wv_party)
+```
+
+Once we have these, we can look at things like differences between political parties. 
+
+```{r, warning=F, message=F}
+# find nearest neighbors by party
+# setting as_list = FALSE combines each group's results into a single tibble (useful for joint plotting)
+immig_nns <- nns(immig_wv_party, pre_trained = cr_glove_subset, N = 5, candidates = immig_wv_party@features, as_list = TRUE)
+
+# check out results for Republican party
+immig_nns[["R"]]
+
+# check out results for Democrat party
+immig_nns[["D"]]
+```
+
+We can see here suggestive differences in how these words are being used across parties, with Democrats emphasizing reform and Republicans emphasizing illegality. 
+
+```{r, warning=F, message=F}
+# gen sequence var (here: year)
+docvars(cr_sample_corpus, 'year') <- rep(2011:2014, each = 50)
+
+cos_simsdf <- get_seq_cos_sim(x = cr_sample_corpus,
+                              seqvar = docvars(cr_sample_corpus, 'year'),
+                              target = "danger",
+                              candidates = c("immigration", "immigrants"),
+                              pre_trained = cr_glove_subset,
+                              transform_matrix = cr_transform)
+
+cos_simsdf %>%
+  ggplot() +
+  geom_line(aes(seqvar, y = immigration))
+
+```
+
+In this final example, we see how we can make over-time comparisons by averaging over a year variable. 
+
+Here, we are averaging the associations between the words immigration and immigrants and the word "danger". We see there is a decline from 2011 onwards. Of course, this would need further validation as we are using just a small subsample of data. 
+## References
