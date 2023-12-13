@@ -18,6 +18,7 @@ Repository for materials relating to ASIS&amp;T SIG-III workshops on word vector
 
 - Worksheet 2 is [here](https://raw.githack.com/cjbarrie/wordvecs/main/3-embeddings.html)
 - Day 2 slides are [here](https://docs.google.com/presentation/d/19Olrjjx_miy3JUt5OzUT-z3vg2u3Icr23vU4Y4EjN7A/edit?usp=sharing)
+- Worksheet 3 is [here](https://raw.githack.com/cjbarrie/wordvecs/main/4-embeddings.html)
 
 ## Data downloads
 
