@@ -12,11 +12,11 @@ You would have a hard time estimating these embedding layers on your own machine
 
 We will be using the same embeddings used in @charlesworth2022.
 
-I have made the download links to these embeddings available on the README to the main Github repo. They are also available [here](https://www.dropbox.com/scl/fi/j7pcfg5dgkosnyjh82eiu/wordvecsdata_engall.RData?rlkey=2gs9mmcn1qtpmkuurefxch48u&dl=0). 
+I have made the download links to these embeddings available on the README to the main Github repo. They are also available [here](https://www.dropbox.com/scl/fi/j7pcfg5dgkosnyjh82eiu/wordvecsdata_engall.RData?rlkey=2gs9mmcn1qtpmkuurefxch48u&dl=0).
 
-It's a large file. But it's all set up for use in R. 
+It's a large file. But it's all set up for use in R.
 
-### Reading in the embedding layer. 
+### Reading in the embedding layer.
 
 We can read in the embedding layer as so:
 
@@ -45,6 +45,26 @@ library(tibble)
 load("/Users/cbarrie6/Dropbox/edbrgh_projects/wrdembed_orientalism/data/output/wordvecsdata_engall.RData")
 
 ```
+
+And then we can see what it looks like with:
+
+```{r, eval = T,  message=F, warning = F}
+glimpse(wordvecs.dat[[1]])
+```
+
+We see here that it contains many thousands of vectors for each of the words in our vocabulary.
+
+What is more, each element of the list represents one decade of the data. And we have 20 elements in our list for the 20 decades in our data.
+
+## Analyzing single words
+
+So how do we go about analyzing these?
+
+We will be using a very useful package called `sweater`. This bundles up various approaches for text similarity analyses used with word embeddings. And it includes the "mean average cosine" (MAC) used in the article by @charlesworth2022.
+
+In the below, we first specify our object "S1" of things to which we are comparing some group of people and in "A1" the grouping we are interested in.
+
+This example chooses just one thing for S1 and one for A1. But we can also compare across multiple similar traits and groups.
 
 ```{r, eval = T,  message=F, warning = F}
 
@@ -77,11 +97,41 @@ ggplot(P_all_long) +
 
 ```
 
+What is the above doing?
+
+First, we start with our group we're interested in; namely, women. We then specify a profession that has historically not been an occupation associated with women: engineering.
+
+Then we define an empty matrix. This is going to get filled up with our cosine similarities for each decade when the for loop has finished running.
+
+We then define this for loop.
+
+That for loop is effectively iterating through each decade (i.e., list component) of our wordvecs.dat.
+
+It first gets that data into matrix format---the format we need for our MAC function to work.
+
+Then it estimates, for that decade, the mean average cosine similarity between the two terms. Here, this is just the cosine similarity, of course, because we have only one term for each component of the comparison (i.e., there's nothing to average over).
+
+The `P` element of the resulting data.frame object contains the cosine similarities we are interested in so we extract those next.
+
+We then assign column names that are the names of each decade.
+
+And finally we bind all of these into the empty matrix that we are populating at each iteration of our loop.
+
+And we can see that the association between woman and engineer has increased over time.
+
+## Analyzing multiple words
+
+We can also include more than one target word and more than one set of e.g., professions we're interested in.
+
+Here, we are looking at the mean average cosine similarity between woman/women and the words scientist and engineer respectively.
+
+Again, we see these have increased over time.
+
 ```{r, eval = T,  message=F, warning = F}
 
 # Example usage
 S1 <- c("scientist", "engineer")
-A1 <- c("woman")
+A1 <- c("woman", "women")
 decade_names <- seq(1800, 1990, by = 10)
 
 P_all <- data.frame(matrix(ncol=0, nrow=length(S1)))
@@ -108,11 +158,20 @@ ggplot(P_all_long) +
 
 ```
 
+## Analyzing traits
+
+Of course, it is not just traits we might be interested in, though. In the article by @charlesworth2022, they investigate multiple sterotyped traits associated with different groups.
+
+Here, I choose a few of those they find to be associated with women.
+
+We can see that there is a general decline in the association between women and these terms over time.
+
 ```{r, eval = T,  message=F, warning = F}
 
 # Example usage
 S1 <- c("soft", "modest", "fair")
-A1 <- c("woman")
+A1 <- c("woman", "women")
+
 decade_names <- seq(1800, 1990, by = 10)
 
 P_all <- data.frame(matrix(ncol=0, nrow=length(S1)))
@@ -135,8 +194,15 @@ P_all_long$year <- as.numeric(P_all_long$year)
 
 ggplot(P_all_long) +
   geom_line(aes(year, value, group = word, linetype = word), alpha = .25) + ylim(c(-0.1, 0.2))
-
 ```
+
+## Comparing between groups
+
+Finally, we can plot several traits that the article by @charlesworth2022 found to be associated more black versus white descriptors. But we can do this in order to compare between groups.
+
+One way of achieving this is by taking the average associations for both groups and this set of traits and comparing that average.
+
+We can do this below simply by taking the mean of our cosine similarities between our term designed to identify black people and our term designed to identify white people.
 
 ```{r, eval = T,  message=F, warning=F}
 # Example usage
@@ -212,3 +278,5 @@ ggplot(P_all_long_wb) +
   facet_wrap(~category)
 
 ```
+
+## References
